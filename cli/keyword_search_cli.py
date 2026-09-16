@@ -3,9 +3,7 @@ import json
 import string 
 from pathlib import Path
 
-
-
-def search(File_path: str, search_query: str) -> None:
+def search(File_path: str, search_query: list) -> None:
     path = Path(File_path)
 
     with open(path, "r", encoding="utf-8") as f:
@@ -19,8 +17,13 @@ def search(File_path: str, search_query: str) -> None:
                     str.maketrans("", "", string.punctuation)
                 ).lower()
 
-                if search_query in clean_title:
-                    res.append(d["title"])
+                title_tokenizing = clean_title.split()
+
+                for token_q in search_query:
+                    for token_t in title_tokenizing:
+                        if token_q in token_t:
+                            res.append(d["title"])
+                            break
 
             
     for i, movie in enumerate(res):
@@ -49,20 +52,19 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    clean_query = "".join(
-       args.query.lower().translate(
-           str.maketrans("", "", string.punctuation)
-        )
-    )
-
     match args.command:
         case "search":
             print(f"Searching for: {args.query}")
+            clean_query = "".join(
+                  args.query.lower().translate(
+                      str.maketrans("", "", string.punctuation)
+                   )
+               )
+            
+            search("data/movies.json", clean_query.lower().split())
             pass
         case _:
             parser.print_help()
-
-    search("data/movies.json", clean_query.lower())
 
 if __name__ == "__main__":
     main()
