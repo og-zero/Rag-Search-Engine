@@ -3,30 +3,70 @@ import json
 import string 
 from pathlib import Path
 
-def search(File_path: str, search_query: list) -> None:
+
+def clean_text(Text: str) -> str:
+    clean_title = Text.translate(
+        str.maketrans("", "", string.punctuation)
+    ).lower()
+
+    return clean_title
+
+
+def tokenization(Text: str) -> list:
+
+    return Text.split()
+
+
+def load_stopwords(File_path: str) -> list:
     path = Path(File_path)
+
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+        stopwords = content.splitlines()
+
+    clean_stopwords = [clean_text(stop_w) for stop_w in stopwords]
+
+    return clean_stopwords
+
+
+def filter_stopwords(tokens: list, stopwords: list) -> list:
+    return [token for token in tokens if token not in stopwords]
+
+
+def search(file_path: str, 
+           stopwords_path: str, 
+           search_query: str
+        ) -> None:
+    
+    path = Path(file_path)
+
+    stopwords = load_stopwords(stopwords_path)
+    clean_query = clean_text(search_query)
+    query_tokens = tokenization(clean_query)
+    filtered_query_tokens = filter_stopwords(
+        query_tokens, stopwords
+    )
 
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    res = []
-    for v in data.values():
-        for d in v:
-            if "title" in d:
-                clean_title = d["title"].translate(
-                    str.maketrans("", "", string.punctuation)
-                ).lower()
+    result = []
+    for category in data.values():
+        for movie in category:
+            if "title" in movie:
+                clean_title = clean_text(movie["title"])
+                title_tokens = tokenization(clean_title)
+                filtered_title_tokens = filter_stopwords(
+                    title_tokens, stopwords
+                )
 
-                title_tokenizing = clean_title.split()
-
-                for token_q in search_query:
-                    for token_t in title_tokenizing:
-                        if token_q in token_t:
-                            res.append(d["title"])
-                            break
-
+            if any(q_token in t_token
+                    for q_token in filtered_query_tokens 
+                    for t_token in filtered_title_tokens
+                ):
+                result.append(movie["title"])        
             
-    for i, movie in enumerate(res):
+    for i, movie in enumerate(result):
         if i == 5:
             break
 
@@ -55,13 +95,12 @@ def main() -> None:
     match args.command:
         case "search":
             print(f"Searching for: {args.query}")
-            clean_query = "".join(
-                  args.query.lower().translate(
-                      str.maketrans("", "", string.punctuation)
-                   )
-               )
             
-            search("data/movies.json", clean_query.lower().split())
+            search(
+                "data/movies.json", 
+                "data/stopwords.txt", 
+                args.query
+            )
             pass
         case _:
             parser.print_help()
