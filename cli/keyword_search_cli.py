@@ -2,7 +2,7 @@ import argparse
 import json
 import string 
 from pathlib import Path
-
+from nltk.stem import PorterStemmer
 
 def clean_text(Text: str) -> str:
     clean_title = Text.translate(
@@ -39,6 +39,7 @@ def search(file_path: str,
         ) -> None:
     
     path = Path(file_path)
+    stemmer = PorterStemmer()
 
     stopwords = load_stopwords(stopwords_path)
     clean_query = clean_text(search_query)
@@ -60,7 +61,7 @@ def search(file_path: str,
                     title_tokens, stopwords
                 )
 
-            if any(q_token in t_token
+            if any(stemmer.stem(q_token) in stemmer.stem(t_token)
                     for q_token in filtered_query_tokens 
                     for t_token in filtered_title_tokens
                 ):
