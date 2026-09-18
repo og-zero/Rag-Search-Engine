@@ -3,6 +3,9 @@ import json
 import string 
 from pathlib import Path
 from nltk.stem import PorterStemmer
+from inverted_index import InvertedIndex
+
+
 
 def clean_text(Text: str) -> str:
     clean_title = Text.translate(
@@ -17,6 +20,13 @@ def tokenization(Text: str) -> list:
     return Text.split()
 
 
+def tokenize_text(Text: str) -> list:
+    clean_title = clean_text(Text)
+    tokens = tokenization(clean_title)
+
+    return tokens
+
+
 def load_stopwords(File_path: str) -> list:
     path = Path(File_path)
 
@@ -29,16 +39,21 @@ def load_stopwords(File_path: str) -> list:
     return clean_stopwords
 
 
+def load_movies():
+    
+    with open("data/movies.json", "r", encoding="utf-8") as f:
+            movies = json.load(f)
+            
+    return movies
+    
+    
 def filter_stopwords(tokens: list, stopwords: list) -> list:
     return [token for token in tokens if token not in stopwords]
 
 
-def search(file_path: str, 
-           stopwords_path: str, 
+def search(stopwords_path: str, 
            search_query: str
         ) -> None:
-    
-    path = Path(file_path)
     stemmer = PorterStemmer()
 
     stopwords = load_stopwords(stopwords_path)
@@ -48,11 +63,10 @@ def search(file_path: str,
         query_tokens, stopwords
     )
 
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    movies = load_movies()
 
     result = []
-    for category in data.values():
+    for category in movies.values():
         for movie in category:
             if "title" in movie:
                 clean_title = clean_text(movie["title"])
@@ -66,7 +80,7 @@ def search(file_path: str,
                     for t_token in filtered_title_tokens
                 ):
                 result.append(movie["title"])        
-            
+
     for i, movie in enumerate(result):
         if i == 5:
             break
@@ -78,7 +92,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Keyword Search CLI"
         )
-    
+
     subparsers = parser.add_subparsers(
         dest="command", help="Available commands"
     )
@@ -96,12 +110,12 @@ def main() -> None:
     match args.command:
         case "search":
             print(f"Searching for: {args.query}")
-            
-            search(
-                "data/movies.json", 
-                "data/stopwords.txt", 
+
+            search("data/stopwords.txt", 
                 args.query
             )
+            pass
+        case "build":
             pass
         case _:
             parser.print_help()

@@ -3,7 +3,17 @@ name = "rag-search-engine"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.10"
+authors = [
+    { name = "Zero", email = "ZERO_BROTHER12345@outlook.com" }
+]
+requires-python = ">=3.12"
 dependencies = [
     "nltk==3.9.1",
 ]
+
+[project.scripts]
+rag-search-engine = "rag_search_engine:main"
+
+[build-system]
+requires = ["uv_build>=0.12.16,<0.13.0"]
+build-backend = "uv_build"
