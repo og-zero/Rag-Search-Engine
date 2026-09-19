@@ -1,14 +1,7 @@
 .venv/
 /data/
 test.py
-<<<<<<< HEAD
-<<<<<<< HEAD
 uv.lock
 .python-version
-=======
-__pycache__/
->>>>>>> 10e1d38 (Fix circular import in CLI and resolve index build crash)
-=======
 __pycache__/
 cache/
->>>>>>> e5e2a6b (Fix circular import in CLI and resolve index build crash)
