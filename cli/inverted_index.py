@@ -48,4 +48,12 @@ class InvertedIndex:
         
         
     def build_command(self):
+<<<<<<< HEAD
         pass
+=======
+        idx = InvertedIndex()
+        idx.build()
+        idx.save()
+        docs = idx.get_documents("merida")
+        print(f"First document for token 'merida' = {docs[0]}")
+>>>>>>> 10e1d38 (Fix circular import in CLI and resolve index build crash)

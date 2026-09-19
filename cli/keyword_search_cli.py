@@ -42,9 +42,15 @@ def load_stopwords(File_path: str) -> list:
 def load_movies():
     
     with open("data/movies.json", "r", encoding="utf-8") as f:
+<<<<<<< HEAD
             movies = json.load(f)
             
     return movies
+=======
+            data = json.load(f)
+            
+    return data['movies']
+>>>>>>> 10e1d38 (Fix circular import in CLI and resolve index build crash)
     
     
 def filter_stopwords(tokens: list, stopwords: list) -> list:
@@ -63,8 +69,14 @@ def search(stopwords_path: str,
         query_tokens, stopwords
     )
 
+<<<<<<< HEAD
     movies = load_movies()
 
+=======
+    with open("data/movies.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+                
+>>>>>>> 10e1d38 (Fix circular import in CLI and resolve index build crash)
     result = []
     for category in movies.values():
         for movie in category:
@@ -89,6 +101,10 @@ def search(stopwords_path: str,
 
 
 def main() -> None:
+    from inverted_index import InvertedIndex
+
+    inverted_index = InvertedIndex()
+
     parser = argparse.ArgumentParser(
         description="Keyword Search CLI"
         )
@@ -105,6 +121,10 @@ def main() -> None:
         "query", type=str, help="Search query"
     )
 
+    search_parser = subparsers.add_parser(
+        "build", help="Search movies using keywords"
+    )
+
     args = parser.parse_args()
 
     match args.command:
@@ -116,7 +136,12 @@ def main() -> None:
             )
             pass
         case "build":
+<<<<<<< HEAD
             pass
+=======
+            inverted_index.build_command()
+            
+>>>>>>> 10e1d38 (Fix circular import in CLI and resolve index build crash)
         case _:
             parser.print_help()
 
