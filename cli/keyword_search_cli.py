@@ -4,6 +4,7 @@ import string
 from pathlib import Path
 from nltk.stem import PorterStemmer
 
+stemmer = PorterStemmer()
 
 def clean_text(Text: str) -> str:
     clean_title = Text.translate(
@@ -18,17 +19,9 @@ def tokenization(Text: str) -> list:
     return Text.split()
 
 
-def tokenize_text(Text: str) -> list:
-    clean_title = clean_text(Text)
-    tokens = tokenization(clean_title)
+def load_stopwords() -> list:
 
-    return tokens
-
-
-def load_stopwords(File_path: str) -> list:
-    path = Path(File_path)
-
-    with open(path, "r", encoding="utf-8") as f:
+    with open("data/stopwords.txt", "r", encoding="utf-8") as f:
         content = f.read()
         stopwords = content.splitlines()
 
@@ -43,45 +36,44 @@ def load_movies():
             
     return data['movies']
     
-    
+
 def filter_stopwords(tokens: list, stopwords: list) -> list:
     return [token for token in tokens if token not in stopwords]
 
 
-def search(stopwords_path: str, 
-           search_query: str
-        ) -> None:
-    stemmer = PorterStemmer()
+def tokenize_text(Text: str) -> list:
+    clean_title = clean_text(Text)
+    tokens = tokenization(clean_title)
+    stopwords = load_stopwords()
+    tokens = filter_stopwords(
+        tokens, stopwords
+        )
+    return tokens
 
-    stopwords = load_stopwords(stopwords_path)
-    clean_query = clean_text(search_query)
-    query_tokens = tokenization(clean_query)
-    filtered_query_tokens = filter_stopwords(
-        query_tokens, stopwords
-    )
 
-    movies = load_movies()
+def search(search_query: str) -> None:
+    from inverted_index import InvertedIndex
 
-    result = []
-    for category in movies.values():
-        for movie in category:
-            if "title" in movie:
-                clean_title = clean_text(movie["title"])
-                title_tokens = tokenization(clean_title)
-                filtered_title_tokens = filter_stopwords(
-                    title_tokens, stopwords
-                )
+    inverted_index = InvertedIndex()
+    inverted_index.load()
+    
+    tokens_query = tokenize_text(search_query)
+    stemmed_query = [stemmer.stem(token) 
+                    for token in tokens_query]
 
-            if any(stemmer.stem(q_token) in stemmer.stem(t_token)
-                    for q_token in filtered_query_tokens 
-                    for t_token in filtered_title_tokens
-                ):
-                result.append(movie["title"])        
+    seen = set()
+    result = []  
 
-    for i, movie in enumerate(result):
-        if i == 5:
-            break
+    for token_q in stemmed_query:
+        indexes = inverted_index.get_documents(token_q)
+        for index in indexes:
+            if index in seen:
+                continue
+            seen.add(index)
+            matching_doc = inverted_index.docmap[index]
+            result.append(matching_doc)
 
+    for i, movie in enumerate(result[:5]):
         print(f"{i + 1}. {movie}")
 
 
@@ -116,9 +108,7 @@ def main() -> None:
         case "search":
             print(f"Searching for: {args.query}")
 
-            search("data/stopwords.txt", 
-                args.query
-            )
+            search(args.query)
             pass
         case "build":
             inverted_index.build_command()
