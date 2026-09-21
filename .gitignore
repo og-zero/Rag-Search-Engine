@@ -4,4 +4,4 @@ test.py
 uv.lock
 .python-version
 __pycache__/
-cache/
+cache
