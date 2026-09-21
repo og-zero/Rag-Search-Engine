@@ -102,6 +102,17 @@ def main() -> None:
         "build", help="Build the inverted index"
     )
 
+    tf_parser = subparsers.add_parser("tf", help="Get term frequency")
+    tf_parser.add_argument("doc_id", type=int, help="Document ID")
+    tf_parser.add_argument("term", type=str, help="Term to check")
+
+    idf_parser = subparsers.add_parser("idf", help="Get Inverse document frequency")
+    idf_parser.add_argument("term", type=str, help="Term to check")
+    
+    tfidf_parser = subparsers.add_parser("tfidf", help="Get Inverse document frequency")
+    tfidf_parser.add_argument("doc_id", type=int, help="Document ID")
+    tfidf_parser.add_argument("term", type=str, help="Term to check")
+
     args = parser.parse_args()
 
     match args.command:
@@ -112,6 +123,18 @@ def main() -> None:
             pass
         case "build":
             inverted_index.build_command()
+        case "tf":
+            inverted_index.build_tf_command(
+                args.doc_id, args.term
+            )
+        case "idf":
+            inverted_index.build_idf_command(
+                args.term
+            )
+        case "tfidf":
+            inverted_index.build_tfifd_command(
+                args.doc_id, args.term
+            )
         case _:
             parser.print_help()
 
