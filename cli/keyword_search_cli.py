@@ -127,6 +127,9 @@ def main() -> None:
     bm25_tf_parser.add_argument(
         "k1", type=float, nargs="?", default=BM25_K1, help="Tunable BM25 K1 parameter"
     )
+    bm25_tf_parser.add_argument(
+        "b", type=float, nargs="?", default=BM25_B, help="Tunable BM25 b parameter"
+    )   
 
     args = parser.parse_args()
 
@@ -155,7 +158,7 @@ def main() -> None:
             )
         case "bm25tf":
             inverted_index.bm25_tf_command(
-                args.doc_id, args.term, args.k1
+                args.doc_id, args.term, args.k1, args.b
             )
         case _:
             parser.print_help()

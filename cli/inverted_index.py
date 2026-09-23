@@ -23,6 +23,7 @@ class InvertedIndex:
             self.index[token].add(doc_id)
 
         self.term_frequencies[doc_id].update(stemmed_tokens)
+        self.doc_lengths[doc_id] = len(stemmed_tokens)
 
     def get_documents(self, term):
         from cli.keyword_search_cli import tokenize_text
@@ -82,7 +83,7 @@ class InvertedIndex:
         return bm25_idf_score
 
 
-    def get_bm25_tf(self, doc_id, term, k1):
+    def get_bm25_tf(self, doc_id, term, k1, b):
         """
         So a word appearing 20 times gets 20× the weight of appearing once.
 
@@ -96,14 +97,24 @@ class InvertedIndex:
         term = tokenize_text(term)
         stemmed_term = stemmer.stem(term[0])
         tf = self.get_tf(doc_id, stemmed_term)
+        avg_doc_length = self.__get_avg_doc_length()
+        doc_length = self.doc_lengths[doc_id]
+        # b controls how strongly document length matters.
+        length_norm = 1 - b + b * (doc_length / avg_doc_length)
 
-        BM25_saturation = (tf * (k1 + 1)) / (tf + k1)
-        return BM25_saturation
+        tf_component = (tf * (k1 + 1)) / (tf + k1 * length_norm)
+        return tf_component
 
 
     def __get_avg_doc_length(self) -> float:
-        pass
-
+        lengths = list(self.doc_lengths.values())
+    
+        if len(lengths) == 0:
+            return 0.0
+    
+        total_length = sum(lengths)
+        return total_length / len(lengths)
+        
 
     def build(self):
         from cli.keyword_search_cli import load_movies
@@ -127,7 +138,7 @@ class InvertedIndex:
         with open(cache_path / "term_frequencies.pkl", "wb") as f:
             pickle.dump(dict(self.term_frequencies), f)
 
-        with open(cache_path / "doc_lengths.pkl", "rb") as f:
+        with open(cache_path / "doc_lengths.pkl", "wb") as f:
             pickle.dump(self.doc_lengths, f)
 
         print(f"Successfully saved index and docmap to '{cache_path}/'")
@@ -185,10 +196,10 @@ class InvertedIndex:
         print(f"BM25 IDF score of '{term}': {bm25idf:.2f}")     
 
     
-    def bm25_tf_command(self, doc_id, term, k1):
+    def bm25_tf_command(self, doc_id, term, k1, b):
         idx = InvertedIndex()
         idx.load()
-        bm25tf = idx.get_bm25_tf(doc_id, term, k1)
+        bm25tf = idx.get_bm25_tf(doc_id, term, k1, b)
 
         print(f"BM25 TF score of '{term}' in document '{doc_id}': {bm25tf:.2f}")
 
