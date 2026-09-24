@@ -13,6 +13,8 @@ class InvertedIndex:
         self.docmap = {}
         self.term_frequencies = defaultdict(Counter)
         self.doc_lengths = {}
+        self.bm25_map_document = {}
+
 
     def __add_document(self, doc_id, text):
         from cli.keyword_search_cli import tokenize_text
@@ -114,7 +116,33 @@ class InvertedIndex:
     
         total_length = sum(lengths)
         return total_length / len(lengths)
+
+
+    def get_bm25(self, doc_id, term, k1, b):
+        bm25_tf = self.get_bm25_tf(doc_id, term, k1, b)
+        bm25_idf = self.get_bm25_idf(term)
+        bm25 = bm25_tf * bm25_idf
+
+        return bm25
+
+
+    def bm25_search(self, query, k1, b, limit):
+        from cli.keyword_search_cli import tokenize_text
+
+        query_tokens = tokenize_text(query)
+        for doc_id in self.docmap:
+            bm25_score = 0
+            for token in query_tokens:
+                bm25_score += self.get_bm25(doc_id, token, k1, b)
+            self.bm25_map_document[doc_id] = bm25_score
+        # scores.items() creates pairs: It turns a dictionary into a list of tuples formatted as (key, value). In this context, that means (doc_id, score)
+        # he lambda x: x[1] line tells Python, "When you look at each pair (x), use its second element (x[1]) to determine the sorting order."
+        sorted_scores = sorted(self.bm25_map_document.items(),
+                              key=lambda x: x[1],
+                              reverse=True)
         
+        for i, score in enumerate(sorted_scores[:limit]):
+            print(f"{i+1}. ({score[0]}) {self.docmap[score[0]]['title']} - Score: {score[1]:.2f}")
 
     def build(self):
         from cli.keyword_search_cli import load_movies
@@ -203,4 +231,8 @@ class InvertedIndex:
 
         print(f"BM25 TF score of '{term}' in document '{doc_id}': {bm25tf:.2f}")
 
-        
+
+    def bm25search_command(self, query, k1, b):
+        idx = InvertedIndex()
+        idx.load()
+        idx.bm25_search(query, k1, b, limit=5)
