@@ -41,6 +41,8 @@ def main() -> None:
             embed_text(
                 args.text
             )
+        case "verify_embeddings":
+            verify_embeddings()
         case _:
             parser.print_help()
 
