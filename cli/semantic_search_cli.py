@@ -1,7 +1,8 @@
 import argparse
 from lib.semantic_search import SemanticSearch
 from lib.semantic_search import (
-    SemanticSearch, embed_text, verify_embeddings
+    SemanticSearch, embed_text, verify_embeddings,
+    embed_query_text
 )
 
 
@@ -32,6 +33,9 @@ def main() -> None:
 
     movies_embedding = subparsers.add_parser("verify_embeddings", description="Embed movies")
 
+    query_embedding = subparsers.add_parser("embed_query", description="Embed query")
+    query_embedding.add_argument("query", type=str, help="Query to embedd")
+
     args = parser.parse_args()
 
     match args.command:
@@ -43,6 +47,8 @@ def main() -> None:
             )
         case "verify_embeddings":
             verify_embeddings()
+        case "embed_query":
+            embed_query_text(args.query)
         case _:
             parser.print_help()
 
