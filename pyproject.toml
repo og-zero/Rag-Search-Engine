@@ -9,6 +9,10 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "nltk==3.9.1",
+<<<<<<< HEAD
+=======
+    "numpy==2.3.3",
+>>>>>>> 0f7d832 (feat(cli): add text embedding generation to semantic search)
     "sentence-transformers>=6.1.0",
 ]
 
