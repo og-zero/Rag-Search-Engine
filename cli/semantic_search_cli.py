@@ -1,6 +1,8 @@
 import argparse
-<<<<<<< HEAD
 from lib.semantic_search import SemanticSearch
+from lib.semantic_search import (
+    SemanticSearch, embed_text, verify_embeddings
+)
 
 
 def main() -> None:
@@ -12,11 +14,7 @@ def main() -> None:
         )
     
     verify_sent = subparsers.add_parser("verify", help="Verify model")
-    
-=======
-from lib.semantic_search import (
-    SemanticSearch, embed_text, verify_embeddings
-)
+
 
 sim_search = SemanticSearch()
 
@@ -34,28 +32,18 @@ def main() -> None:
 
     movies_embedding = subparsers.add_parser("verify_embeddings", description="Embed movies")
 
->>>>>>> 0f7d832 (feat(cli): add text embedding generation to semantic search)
     args = parser.parse_args()
 
     match args.command:
         case "verify":
-<<<<<<< HEAD
-            sentence_transformer.verify_model()
-=======
             sim_search.verify_model()
         case "embed_text":
             embed_text(
                 args.text
             )
->>>>>>> 0f7d832 (feat(cli): add text embedding generation to semantic search)
         case _:
             parser.print_help()
 
 
 if __name__ == "__main__":
-<<<<<<< HEAD
     main()
-
-=======
-    main()
->>>>>>> 0f7d832 (feat(cli): add text embedding generation to semantic search)
