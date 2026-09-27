@@ -2,7 +2,7 @@ import argparse
 from lib.semantic_search import SemanticSearch
 from lib.semantic_search import (
     SemanticSearch, embed_text, verify_embeddings,
-    embed_query_text
+    embed_query_text, search_command
 )
 
 
@@ -36,6 +36,10 @@ def main() -> None:
     query_embedding = subparsers.add_parser("embed_query", description="Embed query")
     query_embedding.add_argument("query", type=str, help="Query to embedd")
 
+    search_embedding = subparsers.add_parser("search", description="Search embeddings")
+    search_embedding.add_argument("query", type=str, help="Query to embedd")  
+    search_embedding.add_argument("--limit", type=int, default=5, help="Limit result")
+    
     args = parser.parse_args()
 
     match args.command:
@@ -49,6 +53,10 @@ def main() -> None:
             verify_embeddings()
         case "embed_query":
             embed_query_text(args.query)
+        case "search":
+            search_command(
+                args.query, args.limit
+            )
         case _:
             parser.print_help()
 
