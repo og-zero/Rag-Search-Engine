@@ -116,3 +116,11 @@ def search_command(query, limit):
         print(f"{i+1}. {res['title']} (score: {res['score']:.4f})\n"
               f"{res['description'][:100]}"
             )
+
+def chunking_command(text, n):
+    splited_text = text.split()
+    chunked_list = [" ".join(splited_text[i:i+n]) for i in range(0, len(splited_text), n)]
+
+    print(f"Chunking {len(text)} characters")
+    for i, chunk in enumerate(chunked_list):
+        print(f"{i+1}. {chunk}")

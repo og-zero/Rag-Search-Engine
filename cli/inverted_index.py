@@ -235,8 +235,5 @@ class InvertedIndex:
     def bm25search_command(self, query, k1, b):
         idx = InvertedIndex()
         idx.load()
-<<<<<<< HEAD
+
         idx.bm25_search(query, k1, b, limit=5)
-=======
-        idx.bm25_search(query, k1, b, limit=5)
->>>>>>> 816d941 (feat: add SemanticSearch class and model verification CLI command)

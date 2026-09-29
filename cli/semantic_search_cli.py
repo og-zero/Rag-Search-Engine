@@ -2,7 +2,7 @@ import argparse
 from lib.semantic_search import SemanticSearch
 from lib.semantic_search import (
     SemanticSearch, embed_text, verify_embeddings,
-    embed_query_text, search_command
+    embed_query_text, search_command, chunking_command
 )
 
 
@@ -39,6 +39,10 @@ def main() -> None:
     search_embedding = subparsers.add_parser("search", description="Search embeddings")
     search_embedding.add_argument("query", type=str, help="Query to embedd")  
     search_embedding.add_argument("--limit", type=int, default=5, help="Limit result")
+
+    chunking = subparsers.add_parser("chunk", description="Chunking text")
+    chunking.add_argument("text", type=str, help="The text to chunk")
+    chunking.add_argument("--chunk-size", type=int, default=200, help="Chunk size argument")
     
     args = parser.parse_args()
 
@@ -56,6 +60,10 @@ def main() -> None:
         case "search":
             search_command(
                 args.query, args.limit
+            )
+        case "chunk":
+            chunking_command(
+                args.text, args.chunk_size
             )
         case _:
             parser.print_help()
