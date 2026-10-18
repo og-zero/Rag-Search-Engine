@@ -238,13 +238,25 @@ def chunking_command(text, n):
         
         
 def simantic_chunking(text, n, ov):
-    splited_text = re.split(r"(?<=[.!?])\s+", text)
-    chunked_list = []
+    text = text.strip()
+    if not text:
+        return []
     
-    for i in range(0, len(splited_text), n-ov):
-        chunked_list.append(" ".join(splited_text[i:i+n]))
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    chunked_list = []
 
-        if i + n >= len(splited_text):
+    if len(sentences) == 1 and sentences[0].endswith(('.', '?', '!')):
+        pass
+
+    for i in range(0, len(sentences), n-ov):
+        sentence = " ".join(sentences[i:i+n])
+        chunked_sentence = sentence.strip()
+        if not chunked_sentence:
+            continue
+        
+        chunked_list.append(chunked_sentence)
+
+        if i + n >= len(sentences):
             break
     
     return chunked_list
