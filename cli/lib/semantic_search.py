@@ -3,6 +3,10 @@ from keyword_search_cli import load_movies
 import numpy as np
 from pathlib import Path
 import numpy as np
+import re
+import os
+import json
+from tqdm import tqdm
 
 class SemanticSearch:
     def __init__(self):
@@ -66,7 +70,114 @@ class SemanticSearch:
                'description': doc['description']}
               for sim, doc in similarities[:limit]]
         
+        
+class ChunkedSemanticSearch(SemanticSearch):
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
+        super().__init__()
+        self.chunk_embeddings = None
+        self.chunk_metadata = None
+     
+    def build_chunk_embeddings(self, documents: list[dict]) -> np.ndarray:
+        
+        self.documents = documents
+        self.document_map = {}
+
+        for doc in self.documents:
+            self.document_map[doc['id']] = doc
             
+        all_chunks = []
+        metadata = []
+    
+        for midx, doc in enumerate(self.documents):
+            if not doc.get('description'):
+                continue
+            
+            chunks = simantic_chunking(doc['description'], 4, 1)
+            
+            for cidx, chunk_text in enumerate(chunks):
+                all_chunks.append(chunk_text) 
+                
+                metadata.append({
+                    'movie_idx': midx,
+                    'movie_id': doc['id'],
+                    'chunk_idx': cidx,
+                })
+
+        print(f"Total chunks generated: {len(all_chunks)}. Starting embedding calculation...")
+        
+
+        self.chunk_embeddings = self.model.encode(
+            all_chunks,
+        )
+        
+        self.chunk_metadata = metadata
+        
+
+        np.save("cache/chunk_embeddings.npy", self.chunk_embeddings)
+
+        with open("cache/chunk_metadata.json", "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
+        
+        return self.chunk_embeddings
+
+        
+    def load_or_create_chunk_embeddings(self, documents: list[dict]) -> np.ndarray:
+        self.documents = documents
+        self.document_map = {}
+
+        for doc in self.documents:
+            self.document_map[doc['id']] = doc
+            
+        embeddings_path = Path("cache/chunk_embeddings.npy")
+        metadata_path = Path("cache/chunk_metadata.json")
+
+        if embeddings_path.exists() and metadata_path.exists():
+            self.chunk_embeddings = np.load(embeddings_path)
+            with open(metadata_path, "r", encoding="utf-8") as f:
+                self.chunk_metadata = json.load(f)
+
+            return self.chunk_embeddings
+            
+        return self.build_chunk_embeddings(self.documents)
+            
+    
+    def search_chunks(self, query: str, limit: int = 10):
+        query_embedings = self.generate_embedding(query)
+        chunks_score = []
+        movie_score = {}
+        res = []
+        
+        for cidx, chunk in enumerate(self.chunk_embeddings):
+            cosin_sim = cosine_similarity(query_embedings, chunk)
+            metadata = self.chunk_metadata[cidx]
+            actual_movie_id = metadata['movie_idx']
+            chunks_score.append(
+                {
+                    'chunk_idx': metadata['chunk_idx'],
+                    'movie_idx': actual_movie_id,
+                    'chunk_metadata': metadata,
+                    'score': cosin_sim
+                }
+            )
+            if actual_movie_id in movie_score:
+                movie_score[actual_movie_id] = max(movie_score[actual_movie_id], cosin_sim)
+            else:
+                movie_score[actual_movie_id] = cosin_sim
+
+        sorted_movie_score = sorted(movie_score.items(), key=lambda x: x[1], reverse=True)
+        for midx, score in sorted_movie_score[:limit]:
+            doc = self.documents[midx]
+            res.append(
+                {
+                    "id": doc["id"],
+                    "title": doc["title"],
+                    "document": doc["description"][:100],
+                    "score": round(score, 3),
+                }
+            )
+        return res
+        
+          
 def embed_text(text):
     sim_search = SemanticSearch()
     embedding = sim_search.generate_embedding(text)
@@ -124,3 +235,34 @@ def chunking_command(text, n):
     print(f"Chunking {len(text)} characters")
     for i, chunk in enumerate(chunked_list):
         print(f"{i+1}. {chunk}")
+        
+        
+def simantic_chunking(text, n, ov):
+    splited_text = re.split(r"(?<=[.!?])\s+", text)
+    chunked_list = []
+    
+    for i in range(0, len(splited_text), n-ov):
+        chunked_list.append(" ".join(splited_text[i:i+n]))
+
+        if i + n >= len(splited_text):
+            break
+    
+    return chunked_list
+
+def embed_chunks_command():
+    documents = load_movies()
+    sim_search = ChunkedSemanticSearch()
+    embeddings = sim_search.load_or_create_chunk_embeddings(documents)
+    
+    print(f"Generated {len(embeddings)} chunked embeddings")
+    
+    
+def seach_chunks_command(query, limit):
+    documents = load_movies()
+    sim_search = ChunkedSemanticSearch()
+    embeddings = sim_search.load_or_create_chunk_embeddings(documents)
+    res = sim_search.search_chunks(query, limit)
+    
+    for i, r in enumerate(res):
+        print(f"\n{i}. {r['title']} (score: {r['score']:.4f})")
+        print(f"   {r['document']}...")
