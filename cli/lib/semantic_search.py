@@ -1,12 +1,12 @@
 from sentence_transformers import SentenceTransformer
 from keyword_search_cli import load_movies
-import numpy as np
 from pathlib import Path
+import numpy as np
+from tqdm import tqdm
 import numpy as np
 import re
 import os
 import json
-from tqdm import tqdm
 
 class SemanticSearch:
     def __init__(self):

@@ -128,7 +128,7 @@ class InvertedIndex:
 
     def bm25_search(self, query, k1, b, limit):
         from cli.keyword_search_cli import tokenize_text
-
+    
         query_tokens = tokenize_text(query)
         for doc_id in self.docmap:
             bm25_score = 0
@@ -140,9 +140,12 @@ class InvertedIndex:
         sorted_scores = sorted(self.bm25_map_document.items(),
                               key=lambda x: x[1],
                               reverse=True)
-        
-        for i, score in enumerate(sorted_scores[:limit]):
-            print(f"{i+1}. ({score[0]}) {self.docmap[score[0]]['title']} - Score: {score[1]:.2f}")
+        return sorted_scores[:limit]
+        # list_bm25_score = []
+        # for i, score in enumerate(sorted_scores[:limit]):
+        # #   print(f"{i+1}. ({score[0]}) {self.docmap[score[0]]['title']} - Score: {score[1]:.2f}")
+        #     list_bm25_score.append(score[1])
+        # return list_bm25_score
 
     def build(self):
         from cli.keyword_search_cli import load_movies
