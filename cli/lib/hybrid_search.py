@@ -3,7 +3,7 @@ import os
 from cli.inverted_index import InvertedIndex #keyword search
 from .semantic_search import ChunkedSemanticSearch
 from cli.keyword_search_cli import load_movies
-
+from cli.llm import fetch_prompte
 
 class HybridSearch():
     def __init__(self, documents: list[dict]) -> None:
@@ -55,7 +55,7 @@ class HybridSearch():
                key=lambda x: x[1]['hybrid_score'],
                reverse=True
             )
-        return sorted_results
+        return sorted_results[:limit]
         
 
     def rrf_search(self, query: str, k: int, limit: int = 10) -> list[dict]:
@@ -69,28 +69,29 @@ class HybridSearch():
 
         mapping_doc_ids = {}
         all_doc_ids = set(bm25_ranks.keys()).union(semantic_ranks.keys())
-
         for id in all_doc_ids:
-            rrf_rank_BM25 = rrf_score(bm25_ranks[id], k)
-            rrf_rank_semantic = rrf_score(semantic_ranks[id], k)
-
+            rrf_rank_BM25 = rrf_score(bm25_ranks.get(id), k)
+            rrf_rank_semantic = rrf_score(semantic_ranks.get(id), k)
+            
             rrf_rank = rrf_rank_BM25 + rrf_rank_semantic
 
             mapping_doc_ids[id] = {
                 'title': self.idx.docmap[id]['title'],
                 'description': self.idx.docmap[id]['description'],
-                'bm25_rank': bm25_ranks[id],
-                'semantic_rank': semantic_ranks[id],
+                'bm25_rank': bm25_ranks.get(id),
+                'semantic_rank': semantic_ranks.get(id),
                 'rrf_rank': rrf_rank
             }
 
         sorted_results = sorted(mapping_doc_ids.items(), 
                                key=lambda x: x[1]['rrf_rank'],
                                reverse=True)
-        return sorted_results
+        return sorted_results[:limit]
 
 
 def rrf_score(rank: int, k: int = 60) -> float:
+    if rank is None:
+        return 0.0
     return 1 / (k + rank)
 
 def hybrid_score(bm25_score: float, semantic_score: float, alpha: float = 0.5) -> float:
@@ -146,9 +147,15 @@ def weighted_search_command(query, alpha, limit):
         print(r[1]['description'][:100])
 
 
-def rrf_search_command(query: str, k: int, limit: int):
+def rrf_search_command(query: str, k: int, limit: int, enhance = None):
     movies = load_movies()
     hybred_search = HybridSearch(movies)
+
+    match enhance:
+        case "spell":
+            enhance_query = fetch_prompte(query, "/home/mzougari/Desktop/Rag-Search-Engine/cli/prompts/enhance.md")
+            print(f"Enhanced query (spell): '{query}' -> '{enhance_query}'\n")
+            query = enhance_query
     result = hybred_search.rrf_search(query, k, limit)
 
     for i, r in enumerate(result):

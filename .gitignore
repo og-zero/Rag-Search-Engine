@@ -3,9 +3,6 @@
 test.py
 uv.lock
 .python-version
-<<<<<<< HEAD
 __pycache__/
 cache
-=======
-cach
->>>>>>> 816d941 (feat: add SemanticSearch class and model verification CLI command)
+.env
