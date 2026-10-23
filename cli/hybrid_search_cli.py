@@ -20,7 +20,7 @@ def main() -> None:
     rrf_search.add_argument("query", type=str, help="Query to pass")
     rrf_search.add_argument("-k", type=int, default=60)
     rrf_search.add_argument("--limit", type=int, default=5)
-    rrf_search.add_argument("--enhance", type=str, choices=["spell", "rewrite"], help="Query enhancement method")
+    rrf_search.add_argument("--enhance", type=str, choices=["spell", "rewrite", "expand"], help="Query enhancement method")
 
     args = parser.parse_args()
 

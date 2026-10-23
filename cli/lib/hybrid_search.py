@@ -156,6 +156,14 @@ def rrf_search_command(query: str, k: int, limit: int, enhance = None):
             enhance_query = fetch_prompte(query, "/home/mzougari/Desktop/Rag-Search-Engine/cli/prompts/enhance.md")
             print(f"Enhanced query (spell): '{query}' -> '{enhance_query}'\n")
             query = enhance_query
+        case "rewrite":
+            enhance_query = fetch_prompte(query, "/home/mzougari/Desktop/Rag-Search-Engine/cli/prompts/rewriting.md")
+            print(f"Enhanced query (rewrite): '{query}' -> '{enhance_query}'\n")
+            query = enhance_query
+        case "rewrite":
+            enhance_query = fetch_prompte(query, "/home/mzougari/Desktop/Rag-Search-Engine/cli/prompts/expand.md")
+            print(f"Enhanced query (expand): '{query}' -> '{enhance_query}'\n")
+            query = enhance_query
     result = hybred_search.rrf_search(query, k, limit)
 
     for i, r in enumerate(result):

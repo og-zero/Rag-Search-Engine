@@ -1,18 +1,12 @@
-Rewrite the user-provided movie search query below to be more specific and searchable.
+Expand the user-provided movie search query below with related terms.
 
-Consider:
-- Common movie knowledge (famous actors, popular films)
-- Genre conventions (horror = scary, animation = cartoon)
-- Keep the rewritten query concise (under 10 words)
-- It should be a Google-style search query, specific enough to yield relevant results
-- Don't use boolean logic
+Add synonyms and related concepts that might appear in movie descriptions.
+Keep expansions relevant and focused.
+Output only the additional terms; they will be appended to the original query.
 
 Examples:
-- "that bear movie where leo gets attacked" -> "The Revenant Leonardo DiCaprio bear attack"
-- "movie about bear in london with marmalade" -> "Paddington London marmalade"
-- "scary movie with bear from few years ago" -> "bear horror movie 2015-2020"
-
-If you cannot improve the query, output the original unchanged.
-Output only the rewritten query text, nothing else.
+- "scary bear movie" -> "scary horror grizzly bear movie terrifying film"
+- "action movie with bear" -> "action thriller bear chase fight adventure"
+- "comedy with bear" -> "comedy funny bear humor lighthearted"
 
 User query: {query}
