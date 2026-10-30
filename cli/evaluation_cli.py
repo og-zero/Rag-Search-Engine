@@ -35,6 +35,7 @@ def main() -> None:
 
         precision = relevant_retrieved / len(retrieved_titles) if retrieved_titles else 0
         recall = relevant_retrieved / len(relevant_docs) if relevant_docs else 0
+        f1 = 2 * (precision * recall) / (precision + recall)
         rrf_results.append(
             {
                 'query': data['query'],
@@ -42,6 +43,7 @@ def main() -> None:
                 'retrieved': retrieved_titles,
                 'relevant': data['relevant_docs'],
                 'recall': recall,
+                'f1_score': f1
             }
         )
 
@@ -50,6 +52,7 @@ def main() -> None:
         print(f"- Query: {r['query']}")
         print(f"- Precision@{limit}: {r['precision']:.4f}")
         print(f"- Recall@{limit}: {r['recall']:.4f}")
+        print(f"- F1 Score: {r['f1_score']:.4f}")
         print(f"- Retrieved: {r['retrieved'] }")
         print(f"- Relevant: {r['relevant']}\n")
 
