@@ -34,12 +34,14 @@ def main() -> None:
         )
 
         precision = relevant_retrieved / len(retrieved_titles) if retrieved_titles else 0
+        recall = relevant_retrieved / len(relevant_docs) if relevant_docs else 0
         rrf_results.append(
             {
                 'query': data['query'],
                 'precision': precision,
                 'retrieved': retrieved_titles,
                 'relevant': data['relevant_docs'],
+                'recall': recall,
             }
         )
 
@@ -47,6 +49,7 @@ def main() -> None:
     for r in rrf_results:
         print(f"- Query: {r['query']}")
         print(f"- Precision@{limit}: {r['precision']:.4f}")
+        print(f"- Recall@{limit}: {r['recall']:.4f}")
         print(f"- Retrieved: {r['retrieved'] }")
         print(f"- Relevant: {r['relevant']}\n")
 
