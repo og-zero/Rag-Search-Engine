@@ -3,7 +3,9 @@ import os
 from cli.inverted_index import InvertedIndex #keyword search
 from .semantic_search import ChunkedSemanticSearch
 from cli.keyword_search_cli import load_movies
-from cli.llm import fetch_prompte
+from cli.llm import fetch_prompte, fetch_rr_prompte, fetch_batch_rr_prompte
+from sentence_transformers import CrossEncoder
+import json
 
 class HybridSearch():
     def __init__(self, documents: list[dict]) -> None:
@@ -56,7 +58,8 @@ class HybridSearch():
                reverse=True
             )
         return sorted_results[:limit]
-        
+        # sorted_res = sorted(result.items(), key=lambda x: x['rerank_response'], reverse=True)
+        # print(sorted_res)
 
     def rrf_search(self, query: str, k: int, limit: int = 10) -> list[dict]:
         self.idx.load()
@@ -77,7 +80,7 @@ class HybridSearch():
 
             mapping_doc_ids[id] = {
                 'title': self.idx.docmap[id]['title'],
-                'description': self.idx.docmap[id]['description'],
+                'document': self.idx.docmap[id]['description'],
                 'bm25_rank': bm25_ranks.get(id),
                 'semantic_rank': semantic_ranks.get(id),
                 'rrf_rank': rrf_rank
@@ -144,10 +147,10 @@ def weighted_search_command(query, alpha, limit):
         print(f"{i+1}. {r[1]['title']}")
         print(f"Hybrid Score: {r[1]['hybrid_score']:.3f}")
         print(f"BM25: {r[1]['normalized_keyword']:.3f}, Semantic: {r[1]['normalized_semantic']:.3f}")
-        print(r[1]['description'][:100])
+        print(r[1]['document'][:100])
 
 
-def rrf_search_command(query: str, k: int, limit: int, enhance = None):
+def rrf_search_command(query: str, k: int, limit: int, enhance = None, rerank_method = None):
     movies = load_movies()
     hybred_search = HybridSearch(movies)
 
@@ -160,14 +163,160 @@ def rrf_search_command(query: str, k: int, limit: int, enhance = None):
             enhance_query = fetch_prompte(query, "/home/mzougari/Desktop/Rag-Search-Engine/cli/prompts/rewriting.md")
             print(f"Enhanced query (rewrite): '{query}' -> '{enhance_query}'\n")
             query = enhance_query
-        case "rewrite":
+        case "expand":
             enhance_query = fetch_prompte(query, "/home/mzougari/Desktop/Rag-Search-Engine/cli/prompts/expand.md")
             print(f"Enhanced query (expand): '{query}' -> '{enhance_query}'\n")
             query = enhance_query
-    result = hybred_search.rrf_search(query, k, limit)
 
-    for i, r in enumerate(result):
-        print(f"{i+1}. {r[1]['title']}")
-        print(f"RRF Score: {r[1]['rrf_rank']:.3f}")
-        print(f"BM25 Rank: {r[1]['bm25_rank']}, Semantic Rank: {r[1]['semantic_rank']}")
-        print(r[1]['description'][:100])
+    candidate_limit = limit * 5 if rerank_method in ("individual", "batch") else limit
+
+    rrf_results = hybred_search.rrf_search(query, k, candidate_limit)
+
+    if rerank_method in ["individual", "batch", "cross_encoder"]:
+        results = []
+
+        if rerank_method == "batch":
+            prompt = "/home/mzougari/Desktop/Rag-Search-Engine/cli/prompts/batch-re-ranking.md"
+
+            candidates = [
+                {
+                    "id": doc_id,
+                    **doc
+                }
+                for doc_id, doc in rrf_results
+            ]
+
+            doc_list_str = ""
+            doc_data = "{doc_id}\n{title}\n{desc}\n\n"
+
+
+            for idx, doc in enumerate(candidates):
+                description = doc.get("description", doc.get("document", ""))
+
+                doc_list_str += doc_data.format(
+                    doc_id=idx,
+                    title=doc.get("title", ""),
+                    desc=description[:300]
+                )
+
+            response = fetch_batch_rr_prompte(
+                prompt,
+                query,
+                doc_list_str
+            )
+
+            try:
+                response_parsed = json.loads(response)
+
+                if not isinstance(response_parsed, list):
+                    raise ValueError("Expected a JSON array")
+                if (
+                    not all(type(idx) is int for idx in response_parsed)
+                    or len(set(response_parsed)) != len(response_parsed)
+                    or not set(response_parsed).issubset(set(range(len(movies))))
+                ):
+                    raise ValueError("Invalid or duplicate movie IDs")
+
+                results = []
+
+                for rank, candidate_idx in enumerate(response_parsed, start=1):
+                    doc = candidates[candidate_idx]
+
+                    results.append({
+                        **doc,
+                        "rerank_rank": rank
+                    })
+
+                results.sort(
+                    key=lambda x: x["rerank_rank"],
+                )
+                results = results[:limit]
+            
+            except (ValueError, TypeError, json.JSONDecodeError) as e:
+                print(f"Invalid batch reranking response: {response!r}")
+                print(f"Error: {e}")
+        elif rerank_method == "individual":
+            prompt = "/home/mzougari/Desktop/Rag-Search-Engine/cli/prompts/re-ranking.md"
+
+            for doc_id, doc in rrf_results:
+                response = fetch_rr_prompte(
+                    prompt,
+                    query,
+                    doc["title"],
+                    doc["document"]
+                )
+                try:
+                    score = float(response)
+
+                except (ValueError, TypeError):
+                    print(f"Invalid reranking score: {response!r}")
+                    continue
+
+                results.append({
+                    **doc,
+                    "id": doc_id,
+                    "rerank_response": score
+                })
+
+            results.sort(
+                key=lambda x: x["rerank_response"],
+            )
+
+            results = results[:limit]
+        elif rerank_method == "cross_encoder":
+            candidate_limit = limit * 5
+            rrf_results = hybred_search.rrf_search(query, k, candidate_limit)
+            pairs = []
+
+            candidates = [
+                {
+                    "id": doc_id,
+                    **doc
+                }
+                for doc_id, doc in rrf_results
+            ]
+
+            for doc in candidates:
+                pairs.append([query, f"{doc.get('title', '')} - {doc.get('document', '')}"])
+
+            cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L2-v2")
+            scores = cross_encoder.predict(pairs)
+            results = []
+            for idx, doc in enumerate(candidates):
+               
+                results.append(
+                    {
+                        **doc,
+                        "cross_encoder_rr": scores[idx]
+                    }
+                )
+            results.sort(key=lambda x: x["cross_encoder_rr"], reverse=True)
+            results = results[:limit]
+
+    else:
+        results = [
+            {"id": doc_id, **doc}
+            for doc_id, doc in rrf_results
+        ]
+    for i, doc in enumerate(results, 1):
+
+        if rerank_method == "individual":
+            print(f"Rerank Score: {doc['rerank_response']:.3f}")
+
+        elif rerank_method == "batch":
+            print(f"Re-ranking top {limit} results using batch method...")
+            print(f"Reciprocal Rank Fusion Results for '{query}' (k=60):\n")
+            print(f"Re-rank Rank: {doc['rerank_rank']}")
+            print(f"\n{i}. {doc['title']}")
+            print(f"RRF Score: {doc['rrf_rank']:.3f}")
+            print(f"BM25 Rank: {doc['bm25_rank']}, Semantic Rank: {doc['semantic_rank']}")
+            print(doc["document"][:100])
+
+        elif rerank_method == "cross_encoder":
+            print(f"Re-ranking top {limit*5} results using cross_encoder method...")
+            print(f"Reciprocal Rank Fusion Results for {query} (k=60):\n")
+            print(f"Cross Encoder Score: {doc['cross_encoder_rr']:.3f}")
+            print(f"{i}. {doc['title']}")
+            print(f"RRF Score: {doc['rrf_rank']:.3f}")
+            print(f"BM25 Rank: {doc['bm25_rank']}, Semantic Rank: {doc['semantic_rank']}")
+            print(doc["document"][:100])
