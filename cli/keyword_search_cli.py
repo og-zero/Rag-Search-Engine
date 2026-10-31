@@ -3,6 +3,7 @@ import json
 import string 
 from pathlib import Path
 from nltk.stem import PorterStemmer
+from functools import lru_cache
 
 stemmer = PorterStemmer()
 BM25_K1 = 1.5
@@ -19,7 +20,7 @@ def clean_text(Text: str) -> str:
 def tokenization(Text: str) -> list:
     return Text.split()
 
-
+@lru_cache(maxsize=1)
 def load_stopwords() -> list:
 
     with open("data/stopwords.txt", "r", encoding="utf-8") as f:

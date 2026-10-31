@@ -37,12 +37,17 @@ class InvertedIndex:
 
     def get_tf(self, doc_id, term):
         from cli.keyword_search_cli import tokenize_text
+
         tokens = tokenize_text(term)
+
         if len(tokens) != 1:
             raise ValueError("Can only have 1 token.")
 
         stemmed_term = stemmer.stem(tokens[0])
-        return self.term_frequencies[doc_id][stemmed_term]
+        return self.get_tf_stemmed(doc_id, stemmed_term)
+
+    def get_tf_stemmed(self, doc_id, stemmed_term):
+        return self.term_frequencies[doc_id].get(stemmed_term, 0)
 
     def get_idf(self, term):
         from cli.keyword_search_cli import tokenize_text
@@ -98,7 +103,8 @@ class InvertedIndex:
 
         term = tokenize_text(term)
         stemmed_term = stemmer.stem(term[0])
-        tf = self.get_tf(doc_id, stemmed_term)
+        # print(f"DEBUG: doc_id={doc_id}, term={term!r}, stemmed_term={stemmed_term!r}")
+        tf = self.get_tf_stemmed(doc_id, stemmed_term)
         avg_doc_length = self.__get_avg_doc_length()
         doc_length = self.doc_lengths[doc_id]
         # b controls how strongly document length matters.
