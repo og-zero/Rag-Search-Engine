@@ -3,7 +3,8 @@ import os
 from cli.inverted_index import InvertedIndex #keyword search
 from .semantic_search import ChunkedSemanticSearch
 from cli.keyword_search_cli import load_movies
-from cli.llm import fetch_prompte, fetch_rr_prompte, fetch_batch_rr_prompte
+from cli.llm import (fetch_prompte, fetch_rr_prompte, 
+                     fetch_batch_rr_prompte, fetch_llm_evl_prompte)
 from sentence_transformers import CrossEncoder
 import json
 
@@ -150,7 +151,7 @@ def weighted_search_command(query, alpha, limit):
         print(r[1]['document'][:100])
 
 
-def rrf_search_command(query: str, k: int, limit: int, enhance = None, rerank_method = None):
+def rrf_search_command(query: str, k: int, limit: int, enhance = None, rerank_method = None, evaluate = None):
     movies = load_movies()
     hybred_search = HybridSearch(movies)
 
@@ -320,3 +321,9 @@ def rrf_search_command(query: str, k: int, limit: int, enhance = None, rerank_me
             print(f"RRF Score: {doc['rrf_rank']:.3f}")
             print(f"BM25 Rank: {doc['bm25_rank']}, Semantic Rank: {doc['semantic_rank']}")
             print(doc["document"][:100])
+
+    if evaluate:
+        json_res = fetch_llm_evl_prompte("/home/mzougari/Desktop/Rag-Search-Engine/cli/prompts/llm_evaluation.md", query, results)
+        res = json.loads(json_res)
+        for i, doc in enumerate(results):
+            print(f"{i+1}. {doc['title']}: {res[i]}/3")

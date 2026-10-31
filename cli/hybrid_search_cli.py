@@ -22,8 +22,7 @@ def main() -> None:
     rrf_search.add_argument("--limit", type=int, default=5)
     rrf_search.add_argument("--enhance", type=str, choices=["spell", "rewrite", "expand"], help="Query enhancement method")
     rrf_search.add_argument("--rerank-method", type=str, choices=["individual", "batch", "cross_encoder"], help="Rerank method")
-
-
+    rrf_search.add_argument("--evaluate", action="store_true")
     args = parser.parse_args()
 
     match args.command:
@@ -39,7 +38,8 @@ def main() -> None:
                         args.k,
                         args.limit,
                         args.enhance,
-                        args.rerank_method
+                        args.rerank_method,
+                        args.evaluate
                     )
         case _:
             parser.print_help()
