@@ -91,6 +91,28 @@ def Augmented_Generation(prompte, query, docs):
 
     return content.strip()
     
+def llm_summarize(prompte, query, docs):
+    prompte = prompte.format(query=query, results=docs)
+    model='openrouter/free'
+    messages = [
+        {
+            "role": "user",
+            "content": prompte,
+        }
+    ]
+    response = client.chat.completions.create(model=model, messages=messages)
+    content = response.choices[0].message.content
+
+    if content is None:
+        raise ValueError("The model returned an empty response")
+
+    return content.strip()
+
+def fetch_llm_summarize_prmpt(path, query, docs):
+    with open(Path(path), 'r') as f:
+            prompte = f.read()
+    
+    return llm_summarize(prompte, query, docs)
 
 def fetch_rag_prompte(path, query, docs):
     with open(Path(path), 'r') as f:
