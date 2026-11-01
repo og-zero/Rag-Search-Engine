@@ -6,7 +6,7 @@ If not enough information is available to provide a good answer, say so, but giv
 Query: {query}
 
 Documents:
-{documents}
+{docs}
 
 Instructions:
 - Provide a comprehensive answer that addresses the query

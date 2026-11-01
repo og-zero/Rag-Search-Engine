@@ -3,7 +3,7 @@ import os
 from cli.inverted_index import InvertedIndex #keyword search
 from .semantic_search import ChunkedSemanticSearch
 from cli.keyword_search_cli import load_movies
-from cli.llm import (fetch_prompte, fetch_rr_prompte, 
+from cli.lib.llm import (fetch_prompte, fetch_rr_prompte, 
                      fetch_batch_rr_prompte, fetch_llm_evl_prompte)
 from sentence_transformers import CrossEncoder
 import json

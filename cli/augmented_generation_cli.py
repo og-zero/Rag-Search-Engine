@@ -1,5 +1,6 @@
 import argparse
-from lib.augmented_generation import rag_command, summarize_command
+from lib.augmented_generation import (rag_command, summarize_command,
+                                      citations_command)
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Retrieval Augmented Generation CLI")
@@ -16,6 +17,13 @@ def main() -> None:
     summarize_parser.add_argument("query", type=str, help="Search query for Summarization")
     summarize_parser.add_argument("--limit", type=int, default=5)
 
+    citations_parser = subparsers.add_parser(
+                "citations", help="Summarization pipeline that synthesizes search results."
+            )
+    citations_parser.add_argument("query", type=str, help="Search query for Summarization")
+    citations_parser.add_argument("--limit", type=int, default=5)
+    
+
     args = parser.parse_args()
 
     match args.command:
@@ -25,6 +33,9 @@ def main() -> None:
         case "summarize":
             query = args.query
             summarize_command(args.query,
+                        args.limit)
+        case "citations":
+            citations_command(args.query,
                         args.limit)
         case _:
             parser.print_help()
