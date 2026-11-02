@@ -1,6 +1,6 @@
 import os
 
-from cli.inverted_index import InvertedIndex #keyword search
+from cli.lib.inverted_index import InvertedIndex #keyword search
 from .semantic_search import ChunkedSemanticSearch
 from cli.keyword_search_cli import load_movies
 from cli.lib.llm import (fetch_prompte, fetch_rr_prompte, 

@@ -54,7 +54,7 @@ def tokenize_text(Text: str) -> list:
 
 
 def search(search_query: str) -> None:
-    from cli.inverted_index import InvertedIndex
+    from cli.lib.inverted_index import InvertedIndex
 
     inverted_index = InvertedIndex()
     inverted_index.load()
@@ -80,7 +80,7 @@ def search(search_query: str) -> None:
 
 
 def main() -> None:
-    from cli.inverted_index import InvertedIndex
+    from cli.lib.inverted_index import InvertedIndex
 
     inverted_index = InvertedIndex()
 
